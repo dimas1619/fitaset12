@@ -1,0 +1,146 @@
+﻿[ 21 ноября 2025 г. 11:14 ] ⁨Дима⁩: <!DOCTYPE html>
+<html>
+<head>
+    <title>Space Shooter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #000; overflow: hidden; touch-action: none; }
+        #gameContainer { position: relative; width: 100vw; height: 100vh; }
+        canvas { display: block; background: #001122; }
+        #score { position: absolute; top: 10px; left: 10px; color: white; font-size: 24px; font-family: Arial; }
+        #controls { position: absolute; bottom: 20px; width: 100%; text-align: center; }
+        .control-btn { width: 60px; height: 60px; margin: 0 10px; background: rgba(255,255,255,0.3); border: none; border-radius: 50%; color: white; font-size: 20px; }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="score">Очки: 0</div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="controls">
+            <button class="control-btn" onclick="moveLeft()">←</button>
+            <button class="control-btn" onclick="moveRight()">→</button>
+            <button class="control-btn" onclick="shoot()">⚡</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight - 100;
+
+        const player = {
+            x: canvas.width / 2 - 25,
+            y: canvas.height - 80,
+            width: 50,
+            height: 50,
+            speed: 8,
+            color: '#00ff00'
+        };
+
+        let bullets = [];
+        let enemies = [];
+        let score = 0;
+
+        function moveLeft() {
+            player.x = Math.max(0, player.x - player.speed);
+        }
+
+        function moveRight() {
+            player.x = Math.min(canvas.width - player.width, player.x + player.speed);
+        }
+
+        function shoot() {
+            bullets.push({
+                x: player.x + player.width / 2 - 3,
+                y: player.y,
+                width: 6,
+                height: 15,
+                speed: 10,
+                color: '#ffff00'
+            });
+        }
+
+        function createEnemy() {
+            enemies.push({
+                x: Math.random() * (canvas.width - 40),
+                y: -40,
+                width: 40,
+                height: 40,
+                speed: 1 + Math.random() * 1,
+                color: '#ff0000'
+            });
+        }
+
+        function gameLoop() {
+            ctx.fillStyle = '#001122';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            bullets = bullets.filter(bullet => {
+                bullet.y -= bullet.speed;
+                ctx.fillStyle = bullet.color;
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+                return bullet.y > 0;
+            });
+
+            if (Math.random() < 0.02) {
+                createEnemy();
+            }
+
+            enemies = enemies.filter(enemy => {
+                enemy.y += enemy.speed;
+
+                if (enemy.y + enemy.height > player.y && 
+                    enemy.x < player.x + player.width &&
+                    enemy.x + enemy.width > player.x) {
+                    alert('Игра окончена! Очки: ' + score);
+                    resetGame();
+                    return false;
+                }
+
+                for (let i = 0; i < bullets.length; i++) {
+                    let bullet = bullets[i];
+                    if (bullet.x < enemy.x + enemy.width &&
+                        bullet.x + bullet.width > enemy.x &&
+                        bullet.y < enemy.y + enemy.height &&
+                        bullet.y + bullet.height > enemy.y) {
+                        score += 10;
+                        scoreElement.textContent = 'Очки: ' + score;
+                        bullets.splice(i, 1);
+                        return false;
+                    }
+                }
+
+                ctx.fillStyle = enemy.color;
+                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                
+                return enemy.y < canvas.height;
+            });
+
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function resetGame() {
+            score = 0;
+            scoreElement.textContent = 'Очки: 0';
+            enemies = [];
+            bullets = [];
+            player.x = canvas.width / 2 - 25;
+        }
+
+        gameLoop();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight - 100;
+            player.x = canvas.width / 2 - 25;
+        });
+    </script>
+</body>
+</html>
